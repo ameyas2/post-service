@@ -17,6 +17,7 @@ import java.util.*;
 public class PostController {
 
     private Map<UUID, Post> postsMap;
+    private List<UUID> postIDs;
 
     @Autowired
     private PostMapper postMapper;
@@ -30,6 +31,7 @@ public class PostController {
         postsMap.put(p1.getId(), p1);
         postsMap.put(p2.getId(), p2);
         postsMap.put(p3.getId(), p3);
+        postIDs = new ArrayList<>(postsMap.keySet().stream().toList());
     }
 
     @GetMapping("/")
@@ -49,13 +51,16 @@ public class PostController {
         Post post = postMapper.toPost(postDTO);
         UUID id = UUID.randomUUID();
         post.setId(id);
+        postIDs.add(id);
         log.info("Adding new post with id: {}", id);
-        return ResponseEntity.ok(postMapper.toPostDTO(postsMap.put(id, post)));
+        postsMap.put(id, post);
+        return ResponseEntity.ok(postMapper.toPostDTO(post));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<PostDTO> delete(@PathVariable("id") UUID id) {
         log.info("Deleting post with id: {}", id);
+        postIDs.remove(id);
         return ResponseEntity.ok(postMapper.toPostDTO(postsMap.remove(id)));
     }
 
@@ -71,6 +76,48 @@ public class PostController {
         newPost.setId(oldPost.getId());
         postsMap.remove(newPost.getId());
         return ResponseEntity.ok(postMapper.toPostDTO(postsMap.put(newPost.getId(), newPost)));
+    }
+
+    @GetMapping("/load")
+    public ResponseEntity<PostDTO> getRandomPost() {
+        Random random = new Random();
+        int index = random.nextInt(postsMap.size());
+        UUID postId = postIDs.get(index);
+        log.info("Get post for id: {}", postId);
+        return ResponseEntity.ok(postMapper.toPostDTO(postsMap.get(postId)));
+    }
+
+    @PostMapping("/load")
+    public ResponseEntity<PostDTO> addRandomPost() {
+        Random random = new Random();
+        String title = generateRandomSentences(random.nextInt(5, 16));
+        String description = generateRandomSentences(random.nextInt(10,41));
+        String username = generateRandomSentences(random.nextInt(2));
+        Post post = Post.of(title, description, username);
+        postIDs.add(post.getId());
+        log.info("Adding new post with id: {}", post.getId());
+        postsMap.put(post.getId(), post);
+        return ResponseEntity.ok(postMapper.toPostDTO(post));
+    }
+
+    public String generateRandomSentences(int wordCount) {
+        StringBuilder sentence = new StringBuilder();
+        for(int i = 0; i < wordCount; i++) {
+            sentence.append(generateRandomWord() + " ");
+        }
+        return sentence.toString().trim();
+    }
+
+    public String generateRandomWord() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        Random random = new Random();
+        int wordLength = random.nextInt(5, 15);
+        StringBuilder builder = new StringBuilder();
+        for(int i = 0; i < wordLength; i++) {
+            builder.append(characters.charAt(random.nextInt(characters.length())));
+        }
+
+        return builder.toString();
     }
 
     private Collection<PostDTO> postDTOs(Collection<Post> posts) {
