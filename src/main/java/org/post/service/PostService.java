@@ -82,7 +82,7 @@ public class PostService {
         String title = generateRandomSentences(random.nextInt(5, 16));
         String description = generateRandomSentences(random.nextInt(10,41));
         String username = generateRandomSentences(random.nextInt(2));
-        Post post = Post.of(title, description, username);
+        Post post = Post.of(title, description);
         log.info("Adding new post with id: {}", post.getId());
         postDAO.post(post);
         return postMapper.toPostDTO(post);

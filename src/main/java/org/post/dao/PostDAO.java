@@ -18,9 +18,9 @@ public class PostDAO {
     @PostConstruct
     public void init() {
         postsMap = new HashMap<>();
-        Post p1 = Post.of("post 1", "post 1 desc", "john");
-        Post p2 = Post.of("post 2", "post 2 desc", "jane");
-        Post p3 = Post.of("post 3", "post 3 desc", "rachel");
+        Post p1 = Post.of("post 1", "post 1 desc");
+        Post p2 = Post.of("post 2", "post 2 desc");
+        Post p3 = Post.of("post 3", "post 3 desc");
         postsMap.put(p1.getId(), p1);
         postsMap.put(p2.getId(), p2);
         postsMap.put(p3.getId(), p3);

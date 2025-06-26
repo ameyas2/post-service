@@ -1,10 +1,11 @@
 package org.post.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Setter
@@ -13,19 +14,21 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Post {
+public class User {
     private UUID id;
-    private String title;
-    private String description;
-    private User user;
+    private String firstName;
+    private String lastname;
+    private String username;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Set<Post> posts = new HashSet<>();
 
-    public static Post of(String title, String description) {
-        return Post.builder()
+    public static User of(String firstName, String lastName, String username) {
+        return User.builder()
                 .id(UUID.randomUUID())
-                .description(description)
-                .title(title)
+                .username(username)
+                .firstName(firstName)
+                .lastname(lastName)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
