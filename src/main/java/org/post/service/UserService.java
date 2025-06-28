@@ -17,10 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Log4j2
@@ -46,47 +43,42 @@ public class UserService {
 
     public UserDTO getUserById(UUID id) {
         log.info("Get user: {}", id);
-        return userMapper.toUserDTO(userDAO.getUserById(id));
+        Optional<User> user = userDAO.getUserById(id);
+        if(user.isEmpty()) {
+            log.info("No user exists for id : {}", id);
+            return UserDTO.builder().message("No user exists for id : " + id).build();
+        }
+        return userMapper.toUserDTO(user.get());
     }
 
     public UserDTO addUser(UserDTO userDTO) {
         User user = userMapper.toUser(userDTO);
-        UUID id = UUID.randomUUID();
-        user.setId(id);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-        log.info("Adding new user with id: {}", id);
-        userDAO.addUser(user);
+        userDAO.saveUser(user);
+        log.info("Added new user with id: {}", user.getId());
         return userMapper.toUserDTO(user);
     }
 
     public UserDTO deleteUser(UUID id) {
         log.info("Deleting user with id: {}", id);
-        User user = userDAO.deleteUser(id);
 
-        UserDTO userDTO = UserDTO.builder().build();
-        if(user != null) {
-            userDTO = userMapper.toUserDTO(user);
-            userDTO.setMessage("user deleted");
+        if(userDAO.exists(id)) {
+            userDAO.deleteUser(id);
+            return UserDTO.builder().message("User deleted with id " + id).build();
         } else {
-            userDTO.setMessage("No post available for id " + id);
+            return UserDTO.builder().message("User not exists with id " + id).build();
         }
-
-        return userDTO;
     }
 
     public UserDTO updateUser(UserDTO userDTO) {
-        User user = userMapper.toUser(userDTO);
-        user.setUpdatedAt(LocalDateTime.now());
-        User updatedUser = userDAO.updateUser(user);
-        if(updatedUser == null) {
-            userDTO.setError("Could not find existing user for the id: " + userDTO.getId());
-            return userDTO;
+        Optional<User> oldUserEntry = userDAO.getUserById(userDTO.getId());
+        if(oldUserEntry.isEmpty()) {
+            log.info("No user available for the id : {}", userDTO.getId());
+            return null;
         }
-        log.info("Updating user with id: {}", user.getId());
-        UserDTO updatedUserDTO = userMapper.toUserDTO(updatedUser);
-        updatedUserDTO.setMessage("User updated");
-        return updatedUserDTO;
+        User oldUser = oldUserEntry.get();
+        update(oldUser, userDTO);
+        userDAO.saveUser(oldUser);
+        return userMapper.toUserDTO(oldUser);
     }
 
     public UserDTO getRandomUser() {
@@ -94,7 +86,7 @@ public class UserService {
         int index = (int)random.nextLong(userDAO.size());
         UUID userId = userDAO.getUserId(index);
         log.info("Get random user for id: {}", userId);
-        return userMapper.toUserDTO(userDAO.getUserById(userId));
+        return userMapper.toUserDTO(userDAO.getUserById(userId).get());
     }
 
     public UserDTO addRandomUser() {
@@ -105,13 +97,17 @@ public class UserService {
         String username = firstName.toLowerCase().charAt(0) + lastName.toLowerCase();
         User user = User.of(firstName, lastName, username);
         log.info("Adding new user with id: {}", user.getId());
-        userDAO.addUser(user);
+        userDAO.saveUser(user);
         return userMapper.toUserDTO(user);
     }
 
-
-
     private Collection<UserDTO> userDTOS(Collection<User> users) {
         return users.stream().map(post -> userMapper.toUserDTO(post)).toList();
+    }
+
+    private void update(User oldUser, UserDTO newUser) {
+        oldUser.setLastname(newUser.getLastname());
+        oldUser.setFirstName(newUser.getFirstName());
+        //existingUser.setUsername(newUser.getUsername());
     }
 }

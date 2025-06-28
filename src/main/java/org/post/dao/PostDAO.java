@@ -47,8 +47,9 @@ public class PostDAO {
         postRepository.deleteById(id);
     }
 
-
-
+    public boolean exists(UUID id) {
+        return postRepository.existsById(id);
+    }
 
     public long size() {
         return postRepository.count();

@@ -48,8 +48,13 @@ public class PostService {
 
     public PostDTO deletePost(UUID id) {
         log.info("Deleting post with id: {}", id);
-        postDAO.deletePostById(id);
-        return PostDTO.builder().message("Post deleted with id : " + id).build();
+
+        if(postDAO.exists(id)) {
+            postDAO.deletePostById(id);
+            return PostDTO.builder().message("Post deleted with id " + id).build();
+        } else {
+            return PostDTO.builder().message("Post not exists with id " + id).build();
+        }
     }
 
     public PostDTO updatePost(PostDTO postDTO) {

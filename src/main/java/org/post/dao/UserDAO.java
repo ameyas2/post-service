@@ -4,6 +4,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.post.model.Post;
 import org.post.model.User;
+import org.post.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -13,70 +15,44 @@ import java.util.*;
 @Log4j2
 public class UserDAO {
 
-    private Map<UUID, User> userMap;
+    @Autowired
+    private UserRepository userRepository;
+
     private List<UUID> userIDs;
 
     @PostConstruct
     public void init() {
-        userMap = new HashMap<>();
-        User u1 = User.of("joe", "buddy", "jbuddy");
-        User u2 = User.of("Samantha", "Karney", "skarney");
-        User u3 = User.of("Ameya", "Sawant", "asawant");
-        userMap.put(u1.getId(), u1);
-        userMap.put(u2.getId(), u2);
-        userMap.put(u3.getId(), u3);
-        userIDs = new ArrayList<>(userMap.keySet().stream().toList());
+        userIDs = new ArrayList<>();
     }
 
     public Collection<User> getAllUsers() {
         log.debug("Getting all users");
-        return userMap.values().stream().toList();
+        return userRepository.findAll();
     }
 
-    public User getUserById(UUID id) {
+    public Optional<User> getUserById(UUID id) {
         log.debug("Get user: {}", id);
-        return userMap.get(id);
+        return userRepository.findById(id);
     }
 
-    public User addUser(User user) {
+    public User saveUser(User user) {
+        userRepository.save(user);
+        log.debug("Adding  user with id: {}", user.getId());
         userIDs.add(user.getId());
-        log.debug("Adding new user with id: {}", user.getId());
-        userMap.put(user.getId(), user);
         return user;
     }
 
-    public User deleteUser(UUID id) {
-        User user = userMap.get(id);
-        if(user == null) {
-            log.info("No user available for the id : {}", id);
-            return null;
-        }
-
-        userMap.remove(id);
+    public void deleteUser(UUID id) {
+        userRepository.deleteById(id);
         deleteUserId(id);
-        return user;
     }
 
-    public User updateUser(User user) {
-        User existingUser = userMap.get(user.getId());
-        if(existingUser == null) {
-            log.info("No user available for the id : {}", user.getId());
-            return null;
-        }
-        update(existingUser, user);
-        userMap.put(existingUser.getId(), existingUser);
-        return user;
-    }
-
-    private void update(User existingUser, User newUser) {
-        existingUser.setLastname(newUser.getLastname());
-        existingUser.setFirstName(newUser.getFirstName());
-        existingUser.setUpdatedAt(LocalDateTime.now());
-        existingUser.setUsername(newUser.getUsername());
+    public boolean exists(UUID id) {
+        return userRepository.existsById(id);
     }
 
     public long size() {
-        return userMap.size();
+        return userRepository.count();
     }
 
     public UUID getUserId(int index) {
