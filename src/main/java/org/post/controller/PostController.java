@@ -18,28 +18,28 @@ public class PostController {
     private PostService postService;
 
     @GetMapping("/")
-    public ResponseEntity<Collection<PostDTO>> posts() {
-        return ResponseEntity.ok(postService.posts());
+    public ResponseEntity<Collection<PostDTO>> getAllPosts() {
+        return ResponseEntity.ok(postService.getAllPosts());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostDTO> get(@PathVariable("id") UUID id) {
-        return ResponseEntity.ok(postService.get(id));
+    public ResponseEntity<PostDTO> getPostById(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(postService.getPostById(id));
     }
 
     @PostMapping("/")
-    public ResponseEntity<PostDTO> post(@RequestBody PostDTO postDTO) {
-        return ResponseEntity.ok(postService.post(postDTO));
+    public ResponseEntity<PostDTO> savePost(@RequestBody PostDTO postDTO) {
+        return ResponseEntity.ok(postService.savePost(postDTO));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<PostDTO> delete(@PathVariable("id") UUID id) {
-        return ResponseEntity.ok(postService.delete(id));
+    public ResponseEntity<PostDTO> deletePost(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(postService.deletePost(id));
     }
 
     @PutMapping("/")
-    public ResponseEntity<PostDTO> update(@RequestBody PostDTO postDTO) {
-        return ResponseEntity.ok(postService.update(postDTO));
+    public ResponseEntity<PostDTO> updatePost(@RequestBody PostDTO postDTO) {
+        return ResponseEntity.ok(postService.updatePost(postDTO));
     }
 
     @GetMapping("/load")

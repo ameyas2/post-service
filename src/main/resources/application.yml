@@ -9,16 +9,16 @@ spring:
       enabled: true
   application:
     name: post-service
-#  datasource:
-#    url: jdbc:postgresql://192.168.29.206:26257/college
-#    username: root
-#    password:
-#    driver-class-name: org.postgresql.Driver
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    properties:
-#      hibernate:
-#        #dialect: org.hibernate.dialect.PostgreSQLDialect
-#        format_sql: true
-#    show-sql: true
+  datasource:
+    url: jdbc:postgresql://192.168.29.206:26257/posts_application
+    username: root
+    password:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        #dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true

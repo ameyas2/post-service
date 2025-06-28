@@ -17,7 +17,7 @@
                 <TimeBasedTriggeringPolicy interval="1" modulate="true" />
             </Policies>
         </RollingFile>-->
-        <!--<Socket name="socket" host="192.168.0.206" port="9999" reconnectionDelayMillis="5000">
+        <!--<Socket name="socket" host="192.168.29.206" port="9999" reconnectionDelayMillis="5000">
             <PatternLayout pattern="${defaultPattern}" />
         </Socket>-->
     </Appenders>

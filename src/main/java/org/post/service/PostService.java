@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -22,48 +23,46 @@ public class PostService {
     @Autowired
     private PostMapper postMapper;
 
-    public Collection<PostDTO> posts() {
+    public Collection<PostDTO> getAllPosts() {
         log.info("Get all posts");
-        return postDTOs(postDAO.posts());
+        return postDTOs(postDAO.getAllPosts());
     }
 
-    public PostDTO get(UUID id) {
+    public PostDTO getPostById(UUID id) {
         log.info("Get post: {}", id);
-        return postMapper.toPostDTO(postDAO.get(id));
+        Optional<Post> postOptional = postDAO.getPostById(id);
+        if(postOptional.isEmpty()) {
+            log.info("No post exist for the id : {}", id);
+            PostDTO.builder().message("No post exist for the id : " + id).build();
+        }
+        return postMapper.toPostDTO(postOptional.get());
     }
 
-    public PostDTO post(PostDTO postDTO) {
+    public PostDTO savePost(PostDTO postDTO) {
         Post post = postMapper.toPost(postDTO);
-        UUID id = UUID.randomUUID();
-        post.setId(id);
-        log.info("Adding new post with id: {}", id);
-        postDAO.post(post);
+        postDAO.savePost(post);
+
+        log.info("Added new post with id: {}", post.getId());
         return postMapper.toPostDTO(post);
     }
 
-    public PostDTO delete(UUID id) {
+    public PostDTO deletePost(UUID id) {
         log.info("Deleting post with id: {}", id);
-        Post post = postDAO.delete(id);
-
-        PostDTO postDTO = PostDTO.builder().build();
-        if(post != null) {
-            postDTO = postMapper.toPostDTO(post);
-            postDTO.setMessage("post deleted");
-        } else {
-            postDTO.setMessage("No post available for id " + id);
-        }
-
-        return postDTO;
+        postDAO.deletePostById(id);
+        return PostDTO.builder().message("Post deleted with id : " + id).build();
     }
 
-    public PostDTO update(PostDTO postDTO) {
+    public PostDTO updatePost(PostDTO postDTO) {
         Post post = postMapper.toPost(postDTO);
-        Post updatedPost = postDAO.update(post);
-        if(updatedPost == null) {
-            postDTO.setError("Could not find existing post for the id: " + postDTO.getId());
-            return postDTO;
+        Optional<Post> oldPost = postDAO.getPostById(post.getId());
+        if(oldPost.isEmpty()) {
+            log.info("No post available for the id : {}", post.getId());
+            return null;
         }
-        log.info("Updating post with id: {}", post.getId());
+        Post updatedPost = oldPost.get();
+        updatePost(updatedPost, post);
+        log.info("Updating post with id: {}", updatedPost.getId());
+        postDAO.savePost(updatedPost);
         PostDTO updatedPostDTO = postMapper.toPostDTO(updatedPost);
         updatedPostDTO.setMessage("Post updated");
         return updatedPostDTO;
@@ -74,18 +73,28 @@ public class PostService {
         int index = (int)random.nextLong(postDAO.size());
         UUID postId = postDAO.getPostId(index);
         log.info("Get random post for id: {}", postId);
-        return postMapper.toPostDTO(postDAO.get(postId));
+        Optional<Post> postOptional = postDAO.getPostById(postId);
+        if(postOptional.isEmpty()) {
+            log.info("No post exist for the id : {}", postId);
+            PostDTO.builder().message("No post exist for the id : " + postId).build();
+        }
+        return postMapper.toPostDTO(postOptional.get());
     }
 
     public PostDTO addRandomPost() {
         Random random = new Random();
         String title = generateRandomSentences(random.nextInt(5, 16));
         String description = generateRandomSentences(random.nextInt(10,41));
-        String username = generateRandomSentences(random.nextInt(2));
+        //String username = generateRandomSentences(random.nextInt(2));
         Post post = Post.of(title, description);
         log.info("Adding new post with id: {}", post.getId());
-        postDAO.post(post);
+        postDAO.savePost(post);
         return postMapper.toPostDTO(post);
+    }
+
+    private void updatePost(Post existingPost, Post newPost) {
+        existingPost.setTitle(newPost.getTitle());
+        existingPost.setDescription(newPost.getDescription());
     }
 
     private String generateRandomSentences(int wordCount) {
