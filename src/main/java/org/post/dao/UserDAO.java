@@ -1,5 +1,6 @@
 package org.post.dao;
 
+import com.hazelcast.core.HazelcastInstance;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.post.model.Post;
@@ -20,9 +21,17 @@ public class UserDAO {
 
     private List<UUID> userIDs;
 
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
+
     @PostConstruct
     public void init() {
-        userIDs = new ArrayList<>();
+        userIDs = hazelcastInstance.getList("user_ids");
+        if(userIDs.isEmpty()) {
+            List<UUID> ids = userRepository.getAllIds();
+            userIDs.addAll(ids);
+        }
+        log.info("Total user ids loaded : {}", userIDs.size());
     }
 
     public Collection<User> getAllUsers() {

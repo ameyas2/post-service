@@ -1,9 +1,7 @@
 package org.post.controller;
 
 import lombok.extern.log4j.Log4j2;
-import org.post.dto.PostDTO;
 import org.post.dto.UserDTO;
-import org.post.service.PostService;
 import org.post.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +28,13 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    @GetMapping("/{id}/posts")
+    public ResponseEntity<UserDTO> getPostsByUserId(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(userService.getPostsByUserId(id));
+    }
+
     @PostMapping("/")
-    public ResponseEntity<UserDTO> post(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<UserDTO> addUser(@RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.addUser(userDTO));
     }
 

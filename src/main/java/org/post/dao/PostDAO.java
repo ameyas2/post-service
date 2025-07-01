@@ -1,5 +1,6 @@
 package org.post.dao;
 
+import com.hazelcast.core.HazelcastInstance;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.post.model.Post;
@@ -19,9 +20,17 @@ public class PostDAO {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
+
     @PostConstruct
     public void init() {
-        postIDs = new ArrayList<>();
+        postIDs = hazelcastInstance.getList("post_ids");
+        if(postIDs.isEmpty()) {
+            List<UUID> ids = postRepository.getAllIds();
+            postIDs.addAll(ids);
+        }
+        log.info("Total post ids loaded : {}", postIDs.size());
     }
 
     public Collection<Post> getAllPosts() {
@@ -35,7 +44,6 @@ public class PostDAO {
     }
 
     public Post savePost(Post post) {
-        postIDs.add(post.getId());
         log.debug("Adding new post with id: {}", post.getId());
         postRepository.save(post);
         postIDs.add(post.getId());
@@ -45,6 +53,7 @@ public class PostDAO {
     public void deletePostById(UUID id) {
         log.debug("Deleting post with id: {}", id);
         postRepository.deleteById(id);
+        postIDs.remove(id);
     }
 
     public boolean exists(UUID id) {

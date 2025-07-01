@@ -1,8 +1,8 @@
 package org.post.service;
 
+import com.hazelcast.core.HazelcastInstance;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
-import org.post.dao.PostDAO;
 import org.post.dao.UserDAO;
 import org.post.dto.PostDTO;
 import org.post.dto.UserDTO;
@@ -13,11 +13,13 @@ import org.post.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -29,11 +31,25 @@ public class UserService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private PostMapper postMapper;
+
     private List<String> names;
+
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
 
     @PostConstruct
     private void init() throws IOException {
-        names = Files.readAllLines(Paths.get("src/main/resources/names.csv"));
+        names = hazelcastInstance.getList("user_names");
+        log.info("Loaded names fetched with size : {}", names.size());
+        if(names.isEmpty()) {
+            log.info("Names is empty");
+            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("names.csv");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            names.addAll(bufferedReader.lines().toList());
+        }
+        log.info("Total usernames loaded : {}", names.size());
     }
 
     public Collection<UserDTO> getAllUsers() {
@@ -50,6 +66,21 @@ public class UserService {
         }
         return userMapper.toUserDTO(user.get());
     }
+
+    public UserDTO getPostsByUserId(UUID id) {
+        log.info("Get all posts for user id : {}", id);
+        Optional<User> user = userDAO.getUserById(id);
+        if(user.isEmpty()) {
+            log.info("No user exists for id : {}", id);
+            return UserDTO.builder().message("No user exists for id : " + id).build();
+        }
+        Set<Post> posts = user.get().getPosts();
+        Set<PostDTO> postDTOs = posts.stream().map(post -> postMapper.toPostDTO(post)).collect(Collectors.toSet());
+        UserDTO userDTO = userMapper.toUserDTO(user.get());
+        userDTO.setPosts(postDTOs);
+        return userDTO;
+    }
+
 
     public UserDTO addUser(UserDTO userDTO) {
         User user = userMapper.toUser(userDTO);

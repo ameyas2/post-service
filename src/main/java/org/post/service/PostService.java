@@ -3,8 +3,11 @@ package org.post.service;
 import lombok.extern.log4j.Log4j2;
 import org.post.dao.PostDAO;
 import org.post.dto.PostDTO;
+import org.post.dto.UserDTO;
 import org.post.mapper.PostMapper;
+import org.post.mapper.UserMapper;
 import org.post.model.Post;
+import org.post.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +26,12 @@ public class PostService {
     @Autowired
     private PostMapper postMapper;
 
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private UserService userService;
+
     public Collection<PostDTO> getAllPosts() {
         log.info("Get all posts");
         return postDTOs(postDAO.getAllPosts());
@@ -35,15 +44,23 @@ public class PostService {
             log.info("No post exist for the id : {}", id);
             PostDTO.builder().message("No post exist for the id : " + id).build();
         }
-        return postMapper.toPostDTO(postOptional.get());
+        Post post = postOptional.get();
+        User user = post.getUser();
+        PostDTO postDTO = postMapper.toPostDTO(post);
+        postDTO.setUserDTO(userMapper.toUserDTO(user));
+        return postDTO;
     }
 
     public PostDTO savePost(PostDTO postDTO) {
         Post post = postMapper.toPost(postDTO);
+        UserDTO userDTO = userService.getUserById(postDTO.getUserDTO().getId());
+        User user = userMapper.toUser(userDTO);
+        post.setUser(user);
         postDAO.savePost(post);
-
         log.info("Added new post with id: {}", post.getId());
-        return postMapper.toPostDTO(post);
+        postDTO = postMapper.toPostDTO(post);
+        postDTO.setUserDTO(userDTO);
+        return postDTO;
     }
 
     public PostDTO deletePost(UUID id) {
@@ -83,7 +100,10 @@ public class PostService {
             log.info("No post exist for the id : {}", postId);
             PostDTO.builder().message("No post exist for the id : " + postId).build();
         }
-        return postMapper.toPostDTO(postOptional.get());
+        Post post = postOptional.get();
+        PostDTO postDTO = postMapper.toPostDTO(post);
+        postDTO.setUserDTO(userMapper.toUserDTO(post.getUser()));
+        return postDTO;
     }
 
     public PostDTO addRandomPost() {
@@ -92,8 +112,11 @@ public class PostService {
         String description = generateRandomSentences(random.nextInt(10,41));
         //String username = generateRandomSentences(random.nextInt(2));
         Post post = Post.of(title, description);
-        log.info("Adding new post with id: {}", post.getId());
+        UserDTO userDTO = userService.getRandomUser();
+        User user = userMapper.toUser(userDTO);
+        post.setUser(user);
         postDAO.savePost(post);
+        log.info("Added new post with id: {}", post.getId());
         return postMapper.toPostDTO(post);
     }
 

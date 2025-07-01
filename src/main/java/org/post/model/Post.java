@@ -30,7 +30,10 @@ public class Post {
 
     @Column(name = "description")
     private String description;
-    //private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
