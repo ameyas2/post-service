@@ -1,6 +1,6 @@
 package org.post.repository;
 
-import org.post.model.Post;
+import org.posts.model.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

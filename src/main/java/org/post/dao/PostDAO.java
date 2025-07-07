@@ -3,8 +3,8 @@ package org.post.dao;
 import com.hazelcast.core.HazelcastInstance;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
-import org.post.model.Post;
 import org.post.repository.PostRepository;
+import org.posts.model.Post;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 

@@ -2,12 +2,13 @@ package org.post.service;
 
 import lombok.extern.log4j.Log4j2;
 import org.post.dao.PostDAO;
-import org.post.dto.PostDTO;
-import org.post.dto.UserDTO;
-import org.post.mapper.PostMapper;
-import org.post.mapper.UserMapper;
-import org.post.model.Post;
-import org.post.model.User;
+import org.post.http.UserServiceHTTP;
+import org.posts.dto.PostDTO;
+import org.posts.dto.UserDTO;
+import org.posts.mapper.PostMapper;
+import org.posts.mapper.UserMapper;
+import org.posts.model.Post;
+import org.posts.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +31,7 @@ public class PostService {
     private UserMapper userMapper;
 
     @Autowired
-    private UserService userService;
+    private UserServiceHTTP userServiceHTTP;
 
     public Collection<PostDTO> getAllPosts() {
         log.info("Get all posts");
@@ -53,7 +54,7 @@ public class PostService {
 
     public PostDTO savePost(PostDTO postDTO) {
         Post post = postMapper.toPost(postDTO);
-        UserDTO userDTO = userService.getUserById(postDTO.getUserDTO().getId());
+        UserDTO userDTO = userServiceHTTP.getUserById(postDTO.getUserDTO().getId());
         User user = userMapper.toUser(userDTO);
         post.setUser(user);
         postDAO.savePost(post);
@@ -112,7 +113,7 @@ public class PostService {
         String description = generateRandomSentences(random.nextInt(10,41));
         //String username = generateRandomSentences(random.nextInt(2));
         Post post = Post.of(title, description);
-        UserDTO userDTO = userService.getRandomUser();
+        UserDTO userDTO = userServiceHTTP.getRandomUser();
         User user = userMapper.toUser(userDTO);
         post.setUser(user);
         postDAO.savePost(post);
