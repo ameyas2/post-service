@@ -27,6 +27,11 @@ public class PostController {
         return ResponseEntity.ok(postService.getPostById(id));
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Collection<PostDTO>> getPostsByUserId(@PathVariable("userId") UUID userId) {
+        return ResponseEntity.ok(postService.getPostsByUserId(userId));
+    }
+
     @PostMapping("/")
     public ResponseEntity<PostDTO> savePost(@RequestBody PostDTO postDTO) {
         return ResponseEntity.ok(postService.savePost(postDTO));

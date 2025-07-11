@@ -11,4 +11,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     @Query("select p.id from #{#entityName} p")
     List<UUID> getAllIds();
+
+    @Query("SELECT p from Post p JOIN User u on u.id = p.user.id where u.id = :userId")
+    List<Post> getPostsByUserId(UUID userId);
 }

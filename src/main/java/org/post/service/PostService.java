@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.List;
 
 @Service
 @Log4j2
@@ -89,6 +90,11 @@ public class PostService {
         PostDTO updatedPostDTO = postMapper.toPostDTO(updatedPost);
         updatedPostDTO.setMessage("Post updated");
         return updatedPostDTO;
+    }
+
+    public Collection<PostDTO> getPostsByUserId(UUID userId) {
+        List<Post> posts = postDAO.getPostsByUserId(userId);
+        return postDTOs(posts);
     }
 
     public PostDTO getRandomPost() {

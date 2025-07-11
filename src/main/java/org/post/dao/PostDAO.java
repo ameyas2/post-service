@@ -56,6 +56,10 @@ public class PostDAO {
         postIDs.remove(id);
     }
 
+    public List<Post> getPostsByUserId(UUID userId) {
+        return postRepository.getPostsByUserId(userId);
+    }
+
     public boolean exists(UUID id) {
         return postRepository.existsById(id);
     }
