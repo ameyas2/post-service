@@ -4,8 +4,11 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import org.post.http.UserServiceHTTP;
+import org.posts.model.PostsEventInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
@@ -35,5 +38,10 @@ public class ApplicationConfiguration {
     @Bean
     public RestClient.Builder userServiceRestClient() {
         return RestClient.builder().baseUrl("http://localhost:10002");
+    }
+
+    @Bean
+    public KafkaTemplate<String, PostsEventInfo> kafkaTemplate(ProducerFactory<String, PostsEventInfo> producerFactory) {
+        return new KafkaTemplate<>(producerFactory);
     }
 }

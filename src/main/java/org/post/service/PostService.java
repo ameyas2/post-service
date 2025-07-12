@@ -1,6 +1,7 @@
 package org.post.service;
 
 import lombok.extern.log4j.Log4j2;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.post.dao.PostDAO;
 import org.post.http.UserServiceHTTP;
 import org.posts.dto.PostDTO;
@@ -8,8 +9,10 @@ import org.posts.dto.UserDTO;
 import org.posts.mapper.PostMapper;
 import org.posts.mapper.UserMapper;
 import org.posts.model.Post;
+import org.posts.model.PostsEventInfo;
 import org.posts.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -34,8 +37,13 @@ public class PostService {
     @Autowired
     private UserServiceHTTP userServiceHTTP;
 
+    @Autowired
+    private KafkaTemplate<String, PostsEventInfo> kafkaTemplate;
+
     public Collection<PostDTO> getAllPosts() {
         log.info("Get all posts");
+        PostsEventInfo postsEventInfo = PostsEventInfo.builder().event("Getting all posts").build();
+        kafkaTemplate.send(new ProducerRecord<>("posts-events", String.valueOf(UUID.randomUUID()), postsEventInfo));
         return postDTOs(postDAO.getAllPosts());
     }
 
