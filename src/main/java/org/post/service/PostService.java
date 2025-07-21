@@ -40,6 +40,9 @@ public class PostService {
     @Autowired
     private KafkaTemplate<String, PostsEventInfo> kafkaTemplate;
 
+    @Autowired
+    private UtilsService utilsService;
+
     public Collection<PostDTO> getAllPosts() {
         log.info("Get all posts");
         PostsEventInfo postsEventInfo = PostsEventInfo.builder().event("Getting all posts").build();
@@ -52,13 +55,11 @@ public class PostService {
         Optional<Post> postOptional = postDAO.getPostById(id);
         if(postOptional.isEmpty()) {
             log.info("No post exist for the id : {}", id);
-            PostDTO.builder().message("No post exist for the id : " + id).build();
+            return PostDTO.builder().message("No post exist for the id : " + id).build();
         }
         Post post = postOptional.get();
         User user = post.getUser();
-        PostDTO postDTO = postMapper.toPostDTO(post);
-        postDTO.setUserDTO(userMapper.toUserDTO(user));
-        return postDTO;
+        return toPostDTO(post, user);
     }
 
     public PostDTO savePost(PostDTO postDTO) {
@@ -68,9 +69,7 @@ public class PostService {
         post.setUser(user);
         postDAO.savePost(post);
         log.info("Added new post with id: {}", post.getId());
-        postDTO = postMapper.toPostDTO(post);
-        postDTO.setUserDTO(userDTO);
-        return postDTO;
+        return toPostDTO(post, user);
     }
 
     public PostDTO deletePost(UUID id) {
@@ -113,19 +112,16 @@ public class PostService {
         Optional<Post> postOptional = postDAO.getPostById(postId);
         if(postOptional.isEmpty()) {
             log.info("No post exist for the id : {}", postId);
-            PostDTO.builder().message("No post exist for the id : " + postId).build();
+            return PostDTO.builder().message("No post exist for the id : " + postId).build();
         }
         Post post = postOptional.get();
-        PostDTO postDTO = postMapper.toPostDTO(post);
-        postDTO.setUserDTO(userMapper.toUserDTO(post.getUser()));
-        return postDTO;
+        return toPostDTO(post, post.getUser());
     }
 
     public PostDTO addRandomPost() {
         Random random = new Random();
-        String title = generateRandomSentences(random.nextInt(5, 16));
-        String description = generateRandomSentences(random.nextInt(10,41));
-        //String username = generateRandomSentences(random.nextInt(2));
+        String title = utilsService.generateRandomSentences(random.nextInt(5, 16));
+        String description = utilsService.generateRandomSentences(random.nextInt(10,41));
         Post post = Post.of(title, description);
         UserDTO userDTO = userServiceHTTP.getRandomUser();
         User user = userMapper.toUser(userDTO);
@@ -140,23 +136,10 @@ public class PostService {
         existingPost.setDescription(newPost.getDescription());
     }
 
-    private String generateRandomSentences(int wordCount) {
-        StringBuilder sentence = new StringBuilder();
-        for(int i = 0; i < wordCount; i++) {
-            sentence.append(generateRandomWord() + " ");
-        }
-        return sentence.toString().trim();
-    }
-
-    private String generateRandomWord() {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        Random random = new Random();
-        int wordLength = random.nextInt(5, 15);
-        StringBuilder builder = new StringBuilder();
-        for(int i = 0; i < wordLength; i++) {
-            builder.append(characters.charAt(random.nextInt(characters.length())));
-        }
-        return builder.toString();
+    private PostDTO toPostDTO(Post post, User user) {
+        PostDTO postDTO = postMapper.toPostDTO(post);
+        postDTO.setUserDTO(userMapper.toUserDTO(user));
+        return postDTO;
     }
 
     private Collection<PostDTO> postDTOs(Collection<Post> posts) {
