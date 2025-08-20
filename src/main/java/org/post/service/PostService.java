@@ -2,12 +2,15 @@ package org.post.service;
 
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.instancio.Instancio;
+import org.instancio.Select;
 import org.post.dao.PostDAO;
 import org.post.http.UserServiceHTTP;
 import org.posts.dto.PostDTO;
 import org.posts.dto.UserDTO;
 import org.posts.mapper.PostMapper;
 import org.posts.mapper.UserMapper;
+import org.posts.model.AbstractEntity;
 import org.posts.model.Post;
 import org.posts.model.PostsEventInfo;
 import org.posts.model.User;
@@ -40,9 +43,6 @@ public class PostService {
     @Autowired
     private KafkaTemplate<String, PostsEventInfo> kafkaTemplate;
 
-    @Autowired
-    private UtilsService utilsService;
-
     public Collection<PostDTO> getAllPosts() {
         log.info("Get all posts");
         PostsEventInfo postsEventInfo = PostsEventInfo.builder().event("Getting all posts").build();
@@ -59,7 +59,8 @@ public class PostService {
         }
         Post post = postOptional.get();
         User user = post.getUser();
-        return toPostDTO(post, user);
+        post.setUser(user);
+        return postMapper.toPostDTO(post);
     }
 
     public PostDTO savePost(PostDTO postDTO) {
@@ -69,7 +70,7 @@ public class PostService {
         post.setUser(user);
         postDAO.savePost(post);
         log.info("Added new post with id: {}", post.getId());
-        return toPostDTO(post, user);
+        return postMapper.toPostDTO(post);
     }
 
     public PostDTO deletePost(UUID id) {
@@ -105,27 +106,22 @@ public class PostService {
     }
 
     public PostDTO getRandomPost() {
-        Random random = new Random();
-        int index = (int)random.nextLong(postDAO.size());
-        UUID postId = postDAO.getPostId(index);
-        log.info("Get random post for id: {}", postId);
-        Optional<Post> postOptional = postDAO.getPostById(postId);
-        if(postOptional.isEmpty()) {
-            log.info("No post exist for the id : {}", postId);
-            return PostDTO.builder().message("No post exist for the id : " + postId).build();
-        }
-        Post post = postOptional.get();
-        return toPostDTO(post, post.getUser());
+        log.info("Get random post");
+        return postMapper.toPostDTO(postDAO.getAnyPost().orElse(null));
     }
 
     public PostDTO addRandomPost() {
-        Random random = new Random();
-        String title = utilsService.generateRandomSentences(random.nextInt(5, 16));
-        String description = utilsService.generateRandomSentences(random.nextInt(10,41));
-        Post post = Post.of(title, description);
-        UserDTO userDTO = userServiceHTTP.getRandomUser();
-        User user = userMapper.toUser(userDTO);
-        post.setUser(user);
+        Post post = Instancio.of(Post.class)
+                .generate(Select.field("title"),
+                        gen -> gen.string().minLength(50).mixedCase())
+                .generate(Select.field("description"),
+                        gen -> gen.string().minLength(50).mixedCase())
+                .ignore(Select.field("user"))
+                .ignore(Select.field(AbstractEntity.class, "id"))
+                .ignore(Select.field(AbstractEntity.class, "createdAt"))
+                .ignore(Select.field(AbstractEntity.class, "updatedAt"))
+                .create();
+        post.setUser(getuser());
         postDAO.savePost(post);
         log.info("Added new post with id: {}", post.getId());
         return postMapper.toPostDTO(post);
@@ -136,10 +132,9 @@ public class PostService {
         existingPost.setDescription(newPost.getDescription());
     }
 
-    private PostDTO toPostDTO(Post post, User user) {
-        PostDTO postDTO = postMapper.toPostDTO(post);
-        postDTO.setUserDTO(userMapper.toUserDTO(user));
-        return postDTO;
+    private User getuser() {
+        UserDTO userDTO = userServiceHTTP.getRandomUser();
+        return userMapper.toUser(userDTO);
     }
 
     private Collection<PostDTO> postDTOs(Collection<Post> posts) {

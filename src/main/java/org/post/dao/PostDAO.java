@@ -15,7 +15,7 @@ import java.util.*;
 @Log4j2
 public class PostDAO {
 
-    private List<UUID> postIDs;
+    private Map<UUID, Post> posts;
 
     @Autowired
     private PostRepository postRepository;
@@ -25,12 +25,12 @@ public class PostDAO {
 
     @PostConstruct
     public void init() {
-        postIDs = hazelcastInstance.getList("post_ids");
-        if(postIDs.isEmpty()) {
-            List<UUID> ids = postRepository.getAllIds();
-            postIDs.addAll(ids);
+        try {
+            posts = hazelcastInstance.getMap("posts");
+            log.info("Total posts loaded : {}", posts.size());
+        } catch (Exception e) {
+            log.error("Exception : {}", e.getMessage(), e);
         }
-        log.info("Total post ids loaded : {}", postIDs.size());
     }
 
     public Collection<Post> getAllPosts() {
@@ -44,16 +44,22 @@ public class PostDAO {
     }
 
     public Post savePost(Post post) {
-        log.debug("Adding new post with id: {}", post.getId());
+        log.info("Adding new post");
         postRepository.save(post);
-        postIDs.add(post.getId());
+        log.info("Added new post with id : {}", post.getId());
+        posts.put(post.getId(), post);
+        log.info("Added new post to hazel with id : {}", post.getId());
         return post;
+    }
+
+    public Optional<Post> getAnyPost() {
+        return posts.values().stream().findAny();
     }
 
     public void deletePostById(UUID id) {
         log.debug("Deleting post with id: {}", id);
         postRepository.deleteById(id);
-        postIDs.remove(id);
+        posts.remove(id);
     }
 
     public List<Post> getPostsByUserId(UUID userId) {
@@ -67,14 +73,4 @@ public class PostDAO {
     public long size() {
         return postRepository.count();
     }
-
-    public UUID getPostId(int index) {
-        return postIDs.get(index);
-    }
-
-    public void addPostId(UUID id) {
-        postIDs.add(id);
-    }
-
-
 }

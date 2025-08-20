@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: post-service-svc
+  labels:
+    app: post-service-svc
+spec:
+  selector:
+    app: post-service-depl
+  ports:
+    - name: svc-port
+      port: 10001
+      protocol: TCP
+      targetPort: 10001
+    - name: actuator-port
+      port: 10011
+      protocol: TCP
+      targetPort: 10011
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post-service-depl
+  labels:
+    app: post-service-depl
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate # This is the default and can be omitted
+    rollingUpdate:
+      maxUnavailable: 25% # Max percentage of Pods that can be unavailable during the update
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: post-service-depl
+  template:
+    metadata:
+      labels:
+        app: post-service-depl
+    spec:
+      containers:
+        - image: ameyas5/post-service
+          name: post-service
+          ports:
+            - name: svc-port
+              containerPort: 10001
+            - name: actuator-port
+              containerPort: 10011
+          resources:
+            requests:
+              memory: "1G"
+              cpu: "0.5"
+            limits:
+              memory: "1G"
+              cpu: "1"
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: post-service-config
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: post-service-config
+data:
+  HAZELCAST.HOST: "192.168.29.212"
+  HAZELCAST.CLUSTER_NAME: "hazel_cluster"
+  HAZELCAST.PORT: "5701"
+  DATASOURCE.URL: "jdbc:postgresql://192.168.29.206:26257/posts_application"
+  DATASOURCE.USERNAME: "root"
+  DATASOURCE.PASSWORD: ""
+  DATASOURCE.DRIVER: "org.postgresql.Driver"
+  JPA.DDL: "none"
+  JPA.FORMAT_SQL: "false"
+  JPA.SHOW_SQL: "false"
+  KAFKA.BOOTSTRAP_SERVERS : "192.168.29.212:9092,192.168.29.212:9093,192.168.29.212:9094"
+  KAFKA.KEY_SERIALIZER : "org.apache.kafka.common.serialization.StringSerializer"
+  KAFKA.VALUE_SERIALIZER : "org.springframework.kafka.support.serializer.JsonSerializer"
+  USER_SERVICE.HOST: "http://192.168.29.206"

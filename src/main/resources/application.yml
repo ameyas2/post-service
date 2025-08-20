@@ -10,13 +10,69 @@ spring:
   application:
     name: post-service
   datasource:
+    url: ${DATASOURCE.URL}
+    username: ${DATASOURCE.USERNAME}
+    password: ${DATASOURCE.PASSWORD}
+    driver-class-name: ${DATASOURCE.DRIVER}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA.DDL}
+    properties:
+      hibernate:
+        #dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: ${JPA.FORMAT_SQL}
+    show-sql: ${JPA.SHOW_SQL}
+  kafka:
+    producer:
+      bootstrap-servers: ${KAFKA.BOOTSTRAP_SERVERS}
+      key-serializer: ${KAFKA.KEY_SERIALIZER}
+      value-serializer: ${KAFKA.VALUE_SERIALIZER}
+
+external-server:
+  hazelcast:
+    host: ${HAZELCAST.HOST}
+    port: ${HAZELCAST.PORT}
+    cluster-name: ${HAZELCAST.CLUSTER_NAME}
+  user-service:
+    host: ${USER_SERVICE.HOST}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  server:
+    port: 10011
+  security:
+    enabled: false
+
+---
+
+server:
+  servlet:
+    context-path: /post-service
+  port: 10001
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  config:
+    activate:
+      on-profile: dev
+  application:
+    name: post-service
+  datasource:
     url: jdbc:postgresql://192.168.29.206:26257/posts_application
     username: root
     password:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         #dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -24,6 +80,27 @@ spring:
     show-sql: true
   kafka:
     producer:
-      bootstrap-servers: 192.168.29.206:9092,192.168.29.206:9093,192.168.29.206:9094
+      bootstrap-servers: 192.168.29.212:9092,192.168.29.212:9093,192.168.29.212:9094
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+external-server:
+  hazelcast:
+    host: 192.168.29.212
+    port: 5701
+    cluster-name: hazel_cluster
+  user-service:
+    host: http://192.168.29.206
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  server:
+    port: 10011
+  security:
+    enabled: false
